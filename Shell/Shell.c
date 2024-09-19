@@ -1,4 +1,6 @@
-#include <stdio.h>
+#include <stdio.h> // for EOF
+#include <unistd.h> // for execvp function
+#include <sys/wait.h> // for system wait datatypes and functions
 
 #define READ_LINE_BLOCK_SIZE 512 //inital size of a line
 #define TOKEN_BUFFER_SIZE 64     // initial size of a string ( token )
@@ -88,4 +90,34 @@ char **shell_parse_line(char *line){
 
     return tokens;
 
+}
+
+
+
+int shell_execute(char **args) {
+    __pid_t pid, wpid; //process identifers 
+
+    int status;
+
+    pid = fork(); // duplicating an existing process
+
+    if (pid == 0) // child process if pid = 0, if pid > 0 child running in parent and -1 if error
+    {
+        //execvp is used to run another process inside a C program
+        if (execvp(args[0],args )  == -1 ) // in my case a command extracted from user
+        {
+           perror("Error in shell command execution");
+        }
+        _exit(0);
+    } else if (pid  == -1) {
+        perror("Error creating Fork");
+    } else {
+        do
+        {
+            wpid = waitpid(pid, &status,WUNTRACED); //wait for child to change state
+        } while (!WIFEXITED(status) && !WIFISIGNALED(status)); // continue until child is terminated or exits
+        
+    }
+    return 1;
+   
 }
