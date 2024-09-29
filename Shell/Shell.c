@@ -29,7 +29,7 @@ void shell_loop_run() {
 
     while (status)
     {
-        printf("> "); //executes at the start of each command
+        printf("lordmhri's shell> "); //printed at the start of each command
         line = shell_line_read(); 
         args = shell_parse_line(line);
         status = shell_execute(args);
@@ -100,9 +100,38 @@ char **shell_parse_line(char *line){
 
 }
 
+int shell_cd(char ** args) {
+    if (args[0] == NULL) //no arguments were passed to the cd command, cd *blank*
+    {
+        fprintf(stderr, " shell, expected argument to  \"cd\"\n"); //fprintf prints the string given to the error stream stderr
+    } else {
+        //chdir attemps to change cd to the next string given
+        //if chdir returns anything other than zero,it means an error has occurred
+        //so it prints out an error
+        if (chdir(args[1]) != 0) 
+        {
+            perror("shell");
+        }
+    }
+    
+    return 1;
+}
 
 
 int shell_execute(char **args) {
+    if (args[0] == NULL) //empty command
+    {
+        return 1;
+    }
+
+
+    if (strcmp(args[0],"cd") == 0) //strcmp compares two strings, if they're the same returns 0
+    {
+        return shell_cd(args); //executes the command
+    } else if (strcmp(args[0], "exit") == 0) { 
+        return 0;
+    } 
+    
     __pid_t pid, wpid; //process identifers 
 
     int status;
