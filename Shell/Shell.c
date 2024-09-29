@@ -1,6 +1,13 @@
 #include <stdio.h> // for EOF
 #include <unistd.h> // for execvp function
 #include <sys/wait.h> // for system wait datatypes and functions
+#include <stdlib.h>
+
+
+void shell_loop_run(void);
+char *shell_line_read(void);
+char **shell_parse_line(char *line);
+int shell_execute(char **args);
 
 #define READ_LINE_BLOCK_SIZE 512 //inital size of a line
 #define TOKEN_BUFFER_SIZE 64     // initial size of a string ( token )
@@ -14,7 +21,7 @@ int main(int argc, char const *argv[])
 }
 
 
-void shell_loop_run(void) {
+void shell_loop_run() {
     char *line;     // this points to the line containing the command (essentially a string)
     char **args;    // this holds the words separated by whitespace (essentially an array of string)
     int status = 1; // status flag from executing commands, set to 1 to make sure loop runs
@@ -24,7 +31,7 @@ void shell_loop_run(void) {
         printf("> "); //executes at the start of each command
         line = shell_line_read(); 
         args = shell_parse_line(line);
-        status = shell_execute(**args);
+        status = shell_execute(args);
 
         free(line);
         free(args);
@@ -42,7 +49,7 @@ char *shell_line_read(){
 
     while (1)
     {
-        checker = getCharacter();
+        checker = getchar();
         // if checker gets to EOF or if the last input is '\n', replace with null char and return
         if (checker == EOF || checker == '\n') 
         {
@@ -115,7 +122,7 @@ int shell_execute(char **args) {
         do
         {
             wpid = waitpid(pid, &status,WUNTRACED); //wait for child to change state
-        } while (!WIFEXITED(status) && !WIFISIGNALED(status)); // continue until child is terminated or exits
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status)); // continue until child is terminated or exits
         
     }
     return 1;
