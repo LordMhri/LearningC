@@ -1,7 +1,8 @@
 #include <stdio.h> // for EOF
 #include <unistd.h> // for execvp function
 #include <sys/wait.h> // for system wait datatypes and functions
-#include <stdlib.h>
+#include <stdlib.h> // for free,malloc and realloc
+#include <string.h> //for strtok
 
 
 void shell_loop_run(void);
@@ -11,7 +12,7 @@ int shell_execute(char **args);
 
 #define READ_LINE_BLOCK_SIZE 512 //inital size of a line
 #define TOKEN_BUFFER_SIZE 64     // initial size of a string ( token )
-#define DELIMITERS '\n\t\r\a'    // delimiters for splitting a string 
+#define DELIMITERS " \n\t\r\a"   // delimiters for splitting a string 
 
 int main(int argc, char const *argv[])
 {
