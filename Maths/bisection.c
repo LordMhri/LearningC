@@ -8,7 +8,7 @@ typedef float(*FunctionPointer)(float);
 
 //this is an example function that will be passed to the bisect function
 float sampleFunc(float x){
-    return  3*x - 2 + (float) (cos(((double) x)));
+    return  3*x - 2 + cos(x);
 }
 
 //given that f(a) and f(b) give different signs and f(x) is continuous on [a,b]
@@ -47,6 +47,6 @@ int main(int argc, char const *argv[])
     float root = bisect(sampleFunc, 0.0f , 2.0f);
     // The expected output for the root of x^2 - 2 is approximately 1.4142 (sqrt(2)).
     // time complexity is O(log(b-a)/precision level) , precision level is 0.0001 in this case
-    printf("Root %f\n , ", root);
+    printf("root is %f\n ", root);
     return 0;
 }

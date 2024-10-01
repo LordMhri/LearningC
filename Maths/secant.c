@@ -4,7 +4,7 @@
 typedef float(*FunctionPointer)(float);
 
 float sampleFunc(float x){
-    return 5*x - 4 + (float)sin(x);
+    return 3*x - 2 + cos(x);
 }
 
 
@@ -22,11 +22,13 @@ float secantMethod(FunctionPointer func,float x0,float x1){
 
     while (fabs(func(x2)) >= 0.00001) //0.00001 is the precision level
     {
-        x2 = x1 - (func(x1) * (x1 - x0)) / (func(x1) - func(x0)); // move x2 closer to the root on every iteration
+        
 
         x0 = x1;//update x0 with x1, moving it closer to the root
         
         x1 = x2;//updtae x1 with x2, moves it closer to the root
+
+        x2 = x1 - (func(x1) * (x1 - x0)) / (func(x1) - func(x0)); // move x2 closer to the root on every iteration
     }
     
 
