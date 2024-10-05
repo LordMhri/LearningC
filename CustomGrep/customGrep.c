@@ -74,10 +74,29 @@ int main(int argc, char const *argv[])
             //this is needed because it may interfere with subsequent loop calls
             myString[len-1] = '\0'; // replace with endline char
         }
+        
 
-        if (strstr(myString, checkString) != NULL) {
-            printf("Found: %s at line %d\n", myString, pos);
-        } //print where we found it and at what line
+      if (strstr(myString, checkString) != NULL) { // if substring is found
+        char *match = myString;
+        char *originalString = myString;  // Save the original pointer
+
+        while ((match = strstr(match, checkString)) != NULL) {
+            int matchStartIndex = match - originalString;
+
+            // Print the string before the match
+            printf("%.*s", matchStartIndex, originalString);
+
+            // Print the matching part in red
+            printf("\e[1;31m%.*s\e[0m", (int)strlen(checkString), match);
+
+            // Move past the current match
+            match += strlen(checkString);
+            originalString = match;
+        }
+
+        // Print the rest of the line after the last match
+        printf("%s\n", originalString);
+        }
         
     }
 
