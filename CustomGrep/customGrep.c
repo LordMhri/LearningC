@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define FILE_CONTENT 128
+#define BUFFER_SIZE 8192
 
 
 /*
@@ -11,41 +11,31 @@ where 'check' is the string to be searched
 and file.txt is where that string is searched
 */
 
-int main(int argc, char const *argv[])
-{
-    FILE *fptr;
-    int bufferSize = FILE_CONTENT;
-    int pos = 0;
+void searchInFile(const char *filename,const char *pattern){
+    FILE * fptr = fopen(filename,"r");
 
-    if (argc < 3)
-    {
-        printf("Arg count less than %d\n", 2);
-        exit(0); // exits if arguments are less than 2
-    }
-    
-    fptr = fopen(argv[2],"r");
-
-    if (fptr == NULL) // file doesn't exist
+    if (fptr == NULL)
     {
         perror("Mhri's Grep Says Error Opening File");
-        return 0;
+        return;
     }
 
+    int bufferSize = BUFFER_SIZE;
 
     char *myString = malloc(sizeof(char) * bufferSize); //allocate space for myString
     if (myString == NULL) //if allocation fails
     {
         perror("Mhri's Grep Says Error Allocating Memory");
-        return 0;
+        return;
     }
 
-    const char *checkString = argv[1];
+    const char *checkString = pattern;
+    size_t checkStringLength = strlen(checkString);
 
     
     
-    while (fgets(myString,bufferSize,fptr)) // this reads until the first 127 characters
+    while (fgets(myString,bufferSize,fptr)) // this reads until the first BUFFER_SIZE characters - 1
     {
-        pos += 1;
         size_t len = strlen(myString);
 
         /*
@@ -53,7 +43,7 @@ int main(int argc, char const *argv[])
         if the end of the file is not reached
         that means the line still has more characters 
         but we've reached the end i.e len - 1 so the line was truncated 
-        it exceeds 127 character
+        so it exceeds the bufferSize
         */
         while (myString[len-1] != '\n' && !feof(fptr))
         {
@@ -62,7 +52,7 @@ int main(int argc, char const *argv[])
            if (myString == NULL)
            {
            perror("Mhri's Grep Says Error Allocating Memory");
-           return 0;
+           return;
            }
            fgets(myString+len,bufferSize-len,fptr);
            len = strlen(myString);
@@ -75,22 +65,22 @@ int main(int argc, char const *argv[])
             myString[len-1] = '\0'; // replace with endline char
         }
         
-
-      if (strstr(myString, checkString) != NULL) { // if substring is found
+        char * subString = strstr(myString, checkString);
+      if ( subString != NULL) { // if substring is found
         char *match = myString;
         char *originalString = myString;  // Save the original pointer
 
-        while ((match = strstr(match, checkString)) != NULL) {
+        while ((match = strstr(match,checkString)) != NULL) {
             int matchStartIndex = match - originalString;
 
             // Print the string before the match
             printf("%.*s", matchStartIndex, originalString);
 
             // Print the matching part in red
-            printf("\e[1;31m%.*s\e[0m", (int)strlen(checkString), match);
+            printf("\e[1;31m%.*s\e[0m", (int)checkStringLength , match);
 
             // Move past the current match
-            match += strlen(checkString);
+            match += checkStringLength ;
             originalString = match;
         }
 
@@ -102,7 +92,27 @@ int main(int argc, char const *argv[])
 
     fclose(fptr);
     free(myString);
+   
+}
 
 
+int main(int argc, char const *argv[])
+{
+
+    if (argc < 3)
+    {
+        printf("Arg count less than %d\n", 2);
+        exit(0); // exits if arguments are less than 2
+    }
+    
+
+   const char *pattern = argv[1];
+
+   for (int i = 2; i < argc; i++)
+   {
+        printf(" Searching in File: %s\n",argv[i]);
+        searchInFile(argv[i],pattern);
+   }
+   
     return 0;
 }
