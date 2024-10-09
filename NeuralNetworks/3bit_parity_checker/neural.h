@@ -18,7 +18,7 @@ typedef struct {
 
     size_t inputNeuronsCount; // number of neurons in the inputlayer -> 3 for the parity checker
     size_t hiddenNeuronsCount;// number of neurons in the hidden layer -> 2 because this is a very simple network,could be more though
-    size_t ouptutNeuronsCount;// number of neurons in the output layer -> 1 for either odd/even
+    size_t outputNeuronsCount;// number of neurons in the output layer -> 1 for either odd/even
 
 
     //The weights and biases needed for the back propagation.
