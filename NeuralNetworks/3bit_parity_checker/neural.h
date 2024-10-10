@@ -7,32 +7,30 @@
     1 output neuron -> even/odd classification
 
  */
-#include <stdio.h>
-
 #ifndef NEURAL_H
 #define NEURAL_H
 
-
-//this is the definition of the Network
-typedef struct {
-
-    size_t inputNeuronsCount; // number of neurons in the inputlayer -> 3 for the parity checker
-    size_t hiddenNeuronsCount;// number of neurons in the hidden layer -> 2 because this is a very simple network,could be more though
-    size_t outputNeuronsCount;// number of neurons in the output layer -> 1 for either odd/even
-
-
-    //The weights and biases needed for the back propagation.
+typedef struct Network 
+{
+    //number of neurons for each layer
+    int n_hidden;
+    int n_input;
+    int n_output;
     
-    double *outputWeight;
-    double *hiddenWeight;
-    double *outputBias;
-    double *hiddenBias;
-} Network; 
+    //biases and weights of hidden and output layer
+    double* hiddenBias;
+    double* outputBias;
+    double* hiddenWeight;
+    double* outputWeight;
 
+    //neuron array for hidden and output layer
+    double* hiddenNeuron;
+    double* outputNeuron;
+} Network;
 
-Network createNetwork(size_t inputNeuronsCount, size_t hiddenNeuronsCount,size_t outputNeuronsCount);//creates the network
-void Train(Network *network,double *inputs,double *expectedOutput,double learningRate); //trains the network
-double* Predict( Network *network,double* inputs); //returns the predicted value
-void freeNetwork(Network *network); // free memory after training
+Network* initializeNetwork(Network *Network,int n_hidden,int n_output,int n_input);
+double *predict(Network *network,double* inputs);
+void train(Network *network,double *expectedOutput,double *inputs,double learningRate );
+
 
 #endif
