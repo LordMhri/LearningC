@@ -2,158 +2,118 @@
 #include <stdlib.h>
 #include <math.h>
 
-
 double randf(){
-    return (double)rand()/ RAND_MAX; //generates a random number between 0 and 1
-    //rand generates a number between 0 and 2^(31)-1
-    //RAND_MAX is 2^(31) - 1
+    return  (double) rand() / RAND_MAX;
 }
 
+//activation function to introduce non-linearity
+//gives value between 0 and 1
+double sigmoid(double x) {
+    return (1.0)/(1.0 + exp(-x));
+}
+double sigmoid_prime(double x){
+    return x * (1.0-x);
+}
 
-Network createNetwork(size_t inputCount,size_t hiddenCount,size_t outputCount){
-    Network network;
-    network.inputNeuronsCount = inputCount;
-    network.outputNeuronsCount = outputCount;
-    network.hiddenNeuronsCount = hiddenCount;
+Network *initializeNetwork(Network *network,int n_input,int n_hidden,int n_output) {
+    //initialize values
+    network->n_input = n_input;
+    network->n_hidden = n_hidden;
+    network->n_output = n_output;
 
-    //allocate memory for weights and biases
-    network.hiddenWeight = malloc(inputCount * hiddenCount * sizeof(double));
-    network.hiddenBias = malloc(hiddenCount * sizeof(double));
-    network.outputWeight = malloc(hiddenCount * outputCount * sizeof(double));
-    network.outputBias = malloc(outputCount * sizeof(double));
 
-    //initialize weights and biases randomly
-    for (size_t i = 0; i < inputCount*hiddenCount; i++)
+    //allocate space
+    network->hiddenBias = calloc(n_hidden,sizeof(*network->hiddenBias));
+    network->outputBias = calloc(n_output,sizeof(*network->outputBias));
+    network->hiddenWeight = calloc(n_hidden*n_input,sizeof(*network->hiddenWeight));
+    network->outputWeight = calloc(n_hidden*n_output,sizeof(*network->outputWeight));
+    network->hiddenNeuron = calloc(n_hidden,sizeof(network->hiddenNeuron));
+    network->outputNeuron = calloc(n_output,sizeof(network->outputNeuron));
+
+    //intialize weights
+    for (int i = 0; i < n_hidden; i++)
     {
-        network.hiddenWeight[i] = randf();
+        network->hiddenWeight[i] = randf();
     }
-    for (size_t i = 0; i < hiddenCount; i++)
+    for (int i = 0; i < n_output; i++)
     {
-        network.hiddenBias[i] = randf();
+        network->outputWeight[i] = randf();
     }
-    for (size_t i = 0; i < outputCount*hiddenCount; i++)
-    {
-        network.outputWeight[i] = randf();
-    }
-    for (size_t i = 0; i < outputCount; i++)
-    {
-        network.outputBias[i] = randf();
-    }
+    
 
     return network;
 }
 
-void freeNetwork(Network *network) {
-    free(network->hiddenWeight);
-    free(network->hiddenBias);
-    free(network->outputWeight);
-    free(network->outputBias);
-}
-
-/*sigmoid function used to introduce non-linearity
-gives a value between 0 and 1
-appraoches 0 for big negative values
-appraoches 1 for big positive values
-approaches 0 as we approach 0 */
-double sigmoid(double x) {
-    return 1.0/(1.0 + exp(-x));
-}
+double *predict(Network *network,double* inputs){
 
 
-double* Predict(Network *network,double *inputs){
-    double *hidden = malloc((network->hiddenNeuronsCount) * sizeof(double));//assuming two hidden neurons in the hidden layer
-
-    //forward propagation through the hidden layer
-    for (size_t i = 0; i < network->hiddenNeuronsCount; i++)
+    //forward propagation to the hidden layer from the input layer
+    for (int i = 0; i < network->n_hidden; i++)
     {
-        //initialize hidden neuron with it's bias
-        // hiddenNeuronActivation = bias[i]
-        hidden[i] = network->hiddenBias[i];
-        for (size_t j = 0; j < network->inputNeuronsCount; j++)
+        double weightedSum = network->hiddenWeight[i]; 
+        for (int j = 0; j < network->n_input; j++)
         {
-            //accumulate weighted input to hidden neuron
-            //hiddenNeuronActivation = bias + summation of (each input neuron * its corresponding weight)
-            //j*network->hiddenNeuronsCount + i is used to find the index of the weight from input neuron j to hidden neuron i
-            hidden[i] += inputs[j]*network->hiddenWeight[j*network->hiddenNeuronsCount + i];
+            weightedSum += inputs[j] * network->hiddenWeight[j * network->n_hidden + i];
         }
-        //applying the sigmoid function to approximate the value to between 0 and 1
-        hidden[i] = sigmoid(hidden[i]);
+        
+        network->hiddenNeuron[i] = sigmoid(weightedSum + network->hiddenBias[i]);
+       
     }
 
-    //forward propagation through the output layer
-    double *output = malloc(network->outputNeuronsCount * sizeof(double));//one output neuron yes or no
-    for (size_t i = 0; i < network->outputNeuronsCount; i++)
+    //forward propagation to the output layer from the hidden layer
+    for (int i = 0; i < network->n_output; i++)
     {
-        output[i] = network->outputBias[i];
-        for (size_t j = 0; j < network->hiddenNeuronsCount ; j++)
+        double weightedSum = 0;
+        for (int j = 0; j < network->n_hidden; j++)
         {
-        // Accumulate weighted input to output neuron
-        // outputNeuronActivation = bias + summation of (each hidden neuron * its corresponding weight)
-        //j*network->outputNeuronsCount + i is used to find corresponding weight from hidden neuron j to output neuron i
-          output[i] += hidden[j] * network->outputWeight[j*network->outputNeuronsCount + i];
+            weightedSum += inputs[j] * network->outputWeight[j * network->n_output + i];
         }
-        //sigmoid function to introduce non-linearity
-        output[i] = sigmoid(output[i]);         
+        network->outputNeuron[i] = sigmoid(weightedSum + network->outputBias[i]);
+        
     }
     
-    free(hidden);
-
-    return output;
+    return network->outputNeuron;
     
 }
 
+void train(Network *network,double *expectedOutput,double *inputs,double learningRate ) {
 
-void Train(Network *network,double *inputs,double *expectedOutput,double learningRate) {
+    //this gives me only one value
+        double *predictedOutput = predict(network,inputs);
 
+        //this only works because we have a single output neuron
+        double error = predictedOutput[0] - expectedOutput[0];
+        //gradient is f'(x) * (1-f(x))
+        //this also is only valid becuse outputNeuron is 1
+        double gradient = error * sigmoid_prime(network->outputNeuron[0]);
 
-    //get the predicted output
-    double *predictedOutput = Predict(network,inputs);
+        double hiddenGradient[network->n_hidden];
+        //find gradient for each hidden neuron
+        for ( int i = 0; i < network->n_hidden; i++)
+        {
+            hiddenGradient[i] = (gradient * network->outputWeight[i]) * sigmoid_prime(network->hiddenNeuron[i]);
+        }
 
-    //get the error from our prediction
-    double outputError = predictedOutput[0] - expectedOutput[0];
+        //update weight in the hidden layer
+        for (int i = 0; i < network->n_hidden; i++)
+        {
+            network->hiddenWeight[i] -= learningRate * gradient * network->hiddenNeuron[i];
+        }
+        
+        network->outputBias[0] -= learningRate * gradient;  
 
-    //find the gradient for the output neuron
-    //derivative of the sigmoid function is f'(x)  = f(x) * (1-f(x))
-    double outputGradient = outputError * predictedOutput[0] * (1 - predictedOutput[0]);
+        // Update weights and biases in the hidden layer
+        for (size_t i = 0; i < network->n_hidden; i++) {
+            for (size_t j = 0; j < network->n_input; j++) {
+                // Update weight connecting input j to hidden neuron i
+                network->hiddenWeight[i * network->n_input + j] -= learningRate * hiddenGradient[i] * inputs[j];
+            }
+        }
 
-    //backpropagating the error to the hidden layer
-    double hiddenGradient[network->hiddenNeuronsCount];
+        // Update biases in the hidden layer
+        for (size_t i = 0; i < network->n_hidden; i++) {
+            network->hiddenBias[i] -= learningRate * hiddenGradient[i];
+        }
+            
 
-
-    double *hiddenActivations = malloc(network->hiddenNeuronsCount * sizeof(double));//allocate memory for hiddenNeurons
-    for (size_t i = 0; i < network->hiddenNeuronsCount; i++)
-    {  
-        //get the contribution of each hidden neuron to the outputGradient
-        hiddenGradient[i] = outputGradient * network->outputWeight[i] * hiddenActivations[i] * (1-hiddenActivations[i]);
-
-    }
-
-    //update weight in the output layer
-    for (size_t i = 0; i < network->hiddenNeuronsCount; i++)
-    {
-        network->outputWeight[i] -= learningRate * outputGradient * hiddenActivations[i];
-    }
-    
-
-   //update bias in the output layer
-   network->outputBias[0] -= learningRate * outputGradient;  
-
-    //update weights and biases in the hiddenlayer
-   for (size_t i = 0; i < network->inputNeuronsCount; i++)
-   {
-    for (size_t j = 0; j < network->hiddenNeuronsCount; j++)
-    {
-        network->hiddenWeight[i * network->hiddenNeuronsCount +j] -= learningRate * hiddenGradient[j] * inputs[i];
-    } 
-   }
-
-   //update hidden biases
-   for (size_t i = 0; i < network->hiddenNeuronsCount; i++)
-   {
-        network->hiddenBias[i] -= learningRate * hiddenGradient[i];
-   }
-   
-
-   free(hiddenActivations);
-   free(predictedOutput);
 }
