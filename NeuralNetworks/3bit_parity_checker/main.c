@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include "neural.h"
 
-#define ITERS 40000
-#define LEARNING_RATE 0.11
+#define ITERS 400000
+#define LEARNING_RATE 0.1
 
 // Function to calculate the parity (even/odd) of a binary number
 size_t parity(size_t i) {
@@ -26,6 +26,10 @@ int main() {
         for (int j = 0; j < 8; j++)
         {
             train(&network,inputs[j],&outputs[j],LEARNING_RATE);
+            if (i % 10000 == 0) {
+    double* prediction = predict(&network, inputs[0]);
+    printf("Iteration %d: Prediction for [0, 0, 0] = %.3f\n", i, prediction[0]);
+}
         }
         
     }
