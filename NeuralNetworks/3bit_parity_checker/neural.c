@@ -55,65 +55,62 @@ double *predict(Network *network,double* inputs){
         {
             weightedSum += inputs[j] * network->hiddenWeight[j * network->n_hidden + i];
         }
-        
         network->hiddenNeuron[i] = sigmoid(weightedSum + network->hiddenBias[i]);
-       
     }
 
     //forward propagation to the output layer from the hidden layer
     for (int i = 0; i < network->n_output; i++)
     {
         double weightedSum = 0;
-        for (int j = 0; j < network->n_hidden; j++)
-        {
-            weightedSum += inputs[j] * network->outputWeight[j * network->n_output + i];
+        for (int j = 0; j < network->n_hidden; j++) {
+            weightedSum += network->hiddenNeuron[j] * network->outputWeight[j * network->n_output + i];
         }
         network->outputNeuron[i] = sigmoid(weightedSum + network->outputBias[i]);
-        
     }
-    
+
     return network->outputNeuron;
-    
 }
 
-void train(Network *network,double *expectedOutput,double *inputs,double learningRate ) {
+// Training the network using backpropagation
+void train(Network *network, double *expectedOutput, double *inputs, double learningRate) {
+    // Get the network's prediction for the given inputs
+    double *predictedOutput = predict(network, inputs);
 
-    //this gives me only one value
-        double *predictedOutput = predict(network,inputs);
+    // Calculate the output errors for each output neuron
+    double outputError[network->n_output];
+    for (int i = 0; i < network->n_output; i++) {
+        outputError[i] = predictedOutput[i] - expectedOutput[i];
+    }
 
-        //this only works because we have a single output neuron
-        double error = predictedOutput[0] - expectedOutput[0];
-        //gradient is f'(x) * (1-f(x))
-        //this also is only valid becuse outputNeuron is 1
-        double gradient = error * sigmoid_prime(network->outputNeuron[0]);
+    // Calculate the gradients for each output neuron
+    double outputGradient[network->n_output];
+    for (int i = 0; i < network->n_output; i++) {
+        outputGradient[i] = outputError[i] * sigmoid_prime(network->outputNeuron[i]);
+    }
 
-        double hiddenGradient[network->n_hidden];
-        //find gradient for each hidden neuron
-        for ( int i = 0; i < network->n_hidden; i++)
-        {
-            hiddenGradient[i] = (gradient * network->outputWeight[i]) * sigmoid_prime(network->hiddenNeuron[i]);
+    // Calculate the hidden layer gradients
+    double hiddenGradient[network->n_hidden];
+    for (int i = 0; i < network->n_hidden; i++) {
+        hiddenGradient[i] = 0;
+        for (int j = 0; j < network->n_output; j++) {
+            hiddenGradient[i] += outputGradient[j] * network->outputWeight[i * network->n_output + j];
         }
+        hiddenGradient[i] *= sigmoid_prime(network->hiddenNeuron[i]);
+    }
 
-        //update weight in the hidden layer
-        for (int i = 0; i < network->n_hidden; i++)
-        {
-            network->hiddenWeight[i] -= learningRate * gradient * network->hiddenNeuron[i];
+    // Update the weights between hidden and output neurons
+    for (int i = 0; i < network->n_output; i++) {
+        for (int j = 0; j < network->n_hidden; j++) {
+            network->outputWeight[j * network->n_output + i] -= learningRate * outputGradient[i] * network->hiddenNeuron[j];
         }
-        
-        network->outputBias[0] -= learningRate * gradient;  
+        network->outputBias[i] -= learningRate * outputGradient[i];
+    }
 
-        // Update weights and biases in the hidden layer
-        for (size_t i = 0; i < network->n_hidden; i++) {
-            for (size_t j = 0; j < network->n_input; j++) {
-                // Update weight connecting input j to hidden neuron i
-                network->hiddenWeight[i * network->n_input + j] -= learningRate * hiddenGradient[i] * inputs[j];
-            }
+    // Update the weights between input and hidden neurons
+    for (int i = 0; i < network->n_hidden; i++) {
+        for (int j = 0; j < network->n_input; j++) {
+            network->hiddenWeight[j * network->n_hidden + i] -= learningRate * hiddenGradient[i] * inputs[j];
         }
-
-        // Update biases in the hidden layer
-        for (size_t i = 0; i < network->n_hidden; i++) {
-            network->hiddenBias[i] -= learningRate * hiddenGradient[i];
-        }
-            
-
+        network->hiddenBias[i] -= learningRate * hiddenGradient[i];
+    }
 }
