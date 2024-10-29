@@ -5,6 +5,14 @@
 #define ITERS 1000 //doesn't even get to half of it
 #define LEARNING_RATE 0.11
 
+int getInput()
+{
+    printf("Enter Number: ");
+    int num;
+    scanf("%d", &num);
+    return num;
+}
+
 int main()
 {
     Network network = {0}; //initializes every struct member to 0 or NULL
@@ -40,9 +48,9 @@ int main()
         } //to mointor error
 
         i++;
-    } while (i < ITERS && total_error > 0.00000000000000001); //if error is less than 1.0e^-17
+    } while (i < ITERS && total_error > 0.000000000000000000000000001); //if error is less than 1.0e^-27
 
-    printf("took %i iterations \n", i);
+    printf("training took %i iterations \n", i);
 
     for (int j = 0; j < 8; j++)
     {
@@ -64,10 +72,15 @@ int main()
         double prediction = feedforward(&network);
         printf("Input: %f, Predicted: %f, Expected: %f\n", input_check[i], prediction, 2*input_check[i]);
     }
-    
+
+    int num = getInput();
+    network.inputs[0] = num;
+    double prediction = feedforward(&network);
+    printf("For input %d, the predicted output is %f\n", num, prediction);
 
     free(network.weights);
     free(network.inputs);
 
     return 0;
 }
+
